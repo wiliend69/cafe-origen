@@ -94,3 +94,68 @@ para cada venta en ventas:
 			ingresosPorCliente[venta.cliente] = 0
 		ingresosPorCliente[venta.cliente] += venta.cantidad * venta.precio
 ```
+
+# Indicadores implementados y decisiones para arreglos vacíos
+
+Las funciones de `src/analitica.js` se exportan para poder reutilizarlas y probarlas. `ticketPromedio` suma el ingreso (`cantidad * precio`) y cuenta únicamente las ventas con `cantidad > 0`; si no hay ventas válidas devuelve `0`. `ventasPorCiudad` también excluye registros con cantidad cero, suma el ingreso de la ciudad solicitada y compara `ciudad.trim().toLowerCase()` para ignorar mayúsculas y espacios al inicio o al final.
+
+| Función | Resultado con arreglo vacío | Motivo |
+| --- | --- | --- |
+| `totalVendido([])` | `0` | No hay ingresos que acumular. |
+| `unidadesVendidas([])` | `0` | No hay unidades que acumular. |
+| `ticketPromedio([])` | `0` | No existe ninguna venta válida para promediar. |
+| `ventasPorCiudad([], "Medellín")` | `0` | No hay ingresos en la ciudad. |
+| `ventaMayor([])` | `null` | No existe un registro que devolver. |
+
+# Trazas manuales
+
+En estas trazas, el ingreso de cada registro es `cantidad * precio`; para el promedio y las ventas por ciudad se omiten las filas con `cantidad` igual a cero.
+
+## Ticket promedio
+
+| ID | Ingreso del registro | Ventas válidas acumuladas | Ingreso acumulado |
+| --- | ---: | ---: | ---: |
+| 1 | 84.000 | 1 | 84.000 |
+| 2 | 26.000 | 2 | 110.000 |
+| 3 | 95.000 | 3 | 205.000 |
+| 4 | 42.000 | 4 | 247.000 |
+| 5 | 135.000 | 5 | 382.000 |
+| 6 | 52.000 | 6 | 434.000 |
+| 7 | 120.000 | 7 | 554.000 |
+| 8 | Excluido: cantidad 0 | 7 | 554.000 |
+| 9 | 90.000 | 8 | 644.000 |
+| 10 | 168.000 | 9 | 812.000 |
+| 11 | 95.000 | 10 | 907.000 |
+| 12 | 78.000 | 11 | 985.000 |
+| Resultado | $985.000 / 11 | | **$89.545,45** |
+
+La prueba del programa con el arreglo completo devuelve `985000 / 11`, que coincide con la división manual.
+
+## Ventas de Medellín
+
+La ciudad buscada se normaliza de `"  MEDELLÍN "` a `"medellín"`; se acumulan las filas cuya ciudad normalizada coincide.
+
+| ID | Ciudad original | Ingreso | Total acumulado |
+| --- | --- | ---: | ---: |
+| 1 | Medellín | 84.000 | 84.000 |
+| 4 | Medellín | 42.000 | 126.000 |
+| 5 | medellín | 135.000 | 261.000 |
+| 11 | Medellín | 95.000 | 356.000 |
+| Resultado | | | **$356.000** |
+
+La prueba del programa con la ciudad `"  MEDELLÍN "` devuelve `356000`, igual que la suma manual.
+
+# Indicadores con métodos de arreglo
+
+Las versiones con métodos mantienen el criterio de venta válida (`cantidad > 0`) de las funciones con ciclos. `filter` selecciona los registros válidos, `map` obtiene el valor o cantidad a sumar y `reduce` acumula con valor inicial `0`.
+
+| Función | ¿Qué recorro? | ¿Qué filtro? | ¿Qué transformo? | ¿Qué acumulo? | ¿Cómo agrupo? |
+| --- | --- | --- | --- | --- | --- |
+| `totalVendidoM` | Todas las ventas. | Registros con `cantidad > 0`. | Cada venta a su ingreso (`cantidad * precio`). | Los ingresos con `reduce(..., 0)`. | No agrupa; produce un total general. |
+| `unidadesVendidasM` | Todas las ventas. | Registros con `cantidad > 0`. | Cada venta a su `cantidad`. | Las unidades con `reduce(..., 0)`. | No agrupa; produce un total general. |
+| `ventasPorCiudadM` | Todas las ventas. | Cantidad positiva y ciudad normalizada igual a la solicitada. | Cada venta coincidente a su ingreso. | Los ingresos de la ciudad con `reduce(..., 0)`. | No crea grupos; calcula la ciudad solicitada. |
+| `totalPorCiudad` | Todas las ventas. | Registros con `cantidad > 0`. | La ciudad a `trim().toLowerCase()` y la venta a su ingreso. | Los ingresos por clave de ciudad. | Usa la ciudad normalizada como clave de un objeto diccionario. |
+| `unidadesPorProducto` | Todas las ventas. | Registros con `cantidad > 0`. | Cada venta a producto y cantidad. | Las cantidades de cada producto. | Usa el nombre del producto como clave de un objeto diccionario. |
+| `topProductosPorValor` | Todas las ventas. | Registros con `cantidad > 0`. | Cada venta a producto e ingreso; luego transforma el diccionario con `Object.entries`. | El ingreso de cada producto. | Agrupa por producto, copia las entradas con `...`, ordena de mayor a menor y toma `k` con `slice`. |
+
+`verificar.js` compara sobre el mismo arreglo las versiones con ciclos y métodos de total vendido, unidades vendidas y ventas en Medellín. El resultado esperado para cada par es `OK`; el proceso termina con código de error si encuentra una diferencia. Las pruebas también comprueban las agrupaciones completas, unitarias y vacías, el orden del top y que el ranking no modifique el arreglo fuente.
