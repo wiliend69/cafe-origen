@@ -159,3 +159,27 @@ Las versiones con métodos mantienen el criterio de venta válida (`cantidad > 0
 | `topProductosPorValor` | Todas las ventas. | Registros con `cantidad > 0`. | Cada venta a producto e ingreso; luego transforma el diccionario con `Object.entries`. | El ingreso de cada producto. | Agrupa por producto, copia las entradas con `...`, ordena de mayor a menor y toma `k` con `slice`. |
 
 `verificar.js` compara sobre el mismo arreglo las versiones con ciclos y métodos de total vendido, unidades vendidas y ventas en Medellín. El resultado esperado para cada par es `OK`; el proceso termina con código de error si encuentra una diferencia. Las pruebas también comprueban las agrupaciones completas, unitarias y vacías, el orden del top y que el ranking no modifique el arreglo fuente.
+
+# Reporte de negocio y depuración
+
+`src/reporte.js` presenta el resumen general, los ingresos por ciudad, las unidades por producto, el top 3 por valor y dos resúmenes diarios. Los importes se formatean con `toLocaleString("es-CO")`; el reporte usa tablas para alinear los datos. El día `2026-09-01` tiene ventas y `2026-09-07` se usa como fecha sin registros.
+
+No se encontraron descripciones originales de incidentes de la gerente en el repositorio. Para dejar verificable la depuración solicitada, se reproducen dos fallos representativos de las condiciones de estos datos y del reporte.
+
+## Error 1: grupos de ciudad duplicados
+
+- **Síntoma:** una ciudad aparece como más de un grupo cuando cambia la capitalización o hay espacios sobrantes.
+- **Entrada que lo produce:** registros con `ciudad: "Medellín"` y `ciudad: "medellín"`; o un par con `"Bogotá"` y `"Bogotá "`.
+- **Hipótesis:** el acumulador usa `venta.ciudad` sin normalizar como clave literal.
+- **Prueba realizada:** `la normalización evita grupos duplicados por mayúsculas y espacios` en `src/analitica.test.js` demuestra que la agrupación sin normalizar crea cuatro claves para esas cuatro filas; `totalPorCiudad` produce solo `medellín` y `bogotá`.
+- **Causa:** las cadenas con mayúsculas o espacios finales son claves distintas en un objeto.
+- **Corrección:** aplicar `trim().toLowerCase()` antes de agrupar. La prueba confirma los totales corregidos de $219.000 para Medellín y $52.000 para Bogotá.
+
+## Error 2: promedio `NaN` en fecha sin ventas
+
+- **Síntoma:** el resumen de un día sin ventas puede mostrar `NaN` como ticket promedio.
+- **Entrada que lo produce:** intentar calcular el promedio para `2026-09-07`, fecha que no aparece en los datos; la operación defectuosa `0 / 0` devuelve `NaN`.
+- **Hipótesis:** el cálculo divide el ingreso total entre la cantidad de ventas sin comprobar si el divisor es cero.
+- **Prueba realizada:** `ventasDelDia resume una fecha y devuelve ceros para una fecha vacía` comprueba que la fecha vacía tiene cero ventas, unidades, ingreso y ticket, y que el ticket no es `NaN` ni hay valores `undefined`.
+- **Causa:** no se define un resultado para el promedio cuando el conteo de ventas válidas es cero.
+- **Corrección:** `ticketPromedio` devuelve `0` cuando no hay ventas válidas y `ventasDelDia` construye un resumen completo con ceros. Para `2026-09-01`, la misma prueba confirma dos ventas, tres unidades, $110.000 y ticket de $55.000.

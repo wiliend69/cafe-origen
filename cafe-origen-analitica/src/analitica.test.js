@@ -6,6 +6,7 @@ const {
 	unidadesVendidas,
 	ventaMayor,
 	ticketPromedio,
+	ventasDelDia,
 	ventasPorCiudad,
 	totalVendidoM,
 	unidadesVendidasM,
@@ -39,6 +40,26 @@ test("ticketPromedio cuenta solo ventas con cantidad mayor que cero", () => {
 	assert.equal(ticketPromedio([]), 0);
 });
 
+test("ventasDelDia resume una fecha y devuelve ceros para una fecha vacía", () => {
+	assert.deepEqual(ventasDelDia(ventas, "2026-09-01"), {
+		fecha: "2026-09-01",
+		cantidadVentas: 2,
+		unidadesVendidas: 3,
+		totalVendido: 110000,
+		ticketPromedio: 55000,
+	});
+	const resumenVacio = ventasDelDia(ventas, "2026-09-07");
+	assert.deepEqual(resumenVacio, {
+		fecha: "2026-09-07",
+		cantidadVentas: 0,
+		unidadesVendidas: 0,
+		totalVendido: 0,
+		ticketPromedio: 0,
+	});
+	assert.equal(Number.isNaN(resumenVacio.ticketPromedio), false);
+	assert.equal(Object.values(resumenVacio).some((valor) => valor === undefined), false);
+});
+
 test("ventasPorCiudad normaliza mayúsculas y espacios sobrantes", () => {
 	assert.equal(ventasPorCiudad(ventas, "  MEDELLÍN "), 356000);
 	assert.equal(ventasPorCiudad([ventas[0]], " medellín "), 84000);
@@ -67,6 +88,25 @@ test("totalPorCiudad agrupa ciudades normalizadas", () => {
 		totalPorCiudad([ventas[1], { ...ventas[1], ciudad: "Bogotá " }]),
 		{ bogotá: 52000 }
 	);
+});
+
+test("la normalización evita grupos duplicados por mayúsculas y espacios", () => {
+	const entrada = [
+		ventas[0],
+		ventas[4],
+		ventas[1],
+		{ ...ventas[1], ciudad: "Bogotá " },
+	];
+	const agrupacionSinNormalizar = entrada.reduce((grupos, venta) => {
+		grupos[venta.ciudad] = (grupos[venta.ciudad] ?? 0) + venta.cantidad * venta.precio;
+		return grupos;
+	}, {});
+	assert.equal(Object.keys(agrupacionSinNormalizar).length, 4);
+
+	const agrupacionCorregida = totalPorCiudad(entrada);
+	assert.deepEqual(Object.keys(agrupacionCorregida), ["medellín", "bogotá"]);
+	assert.equal(agrupacionCorregida.medellín, 219000);
+	assert.equal(agrupacionCorregida.bogotá, 52000);
 });
 
 test("unidadesPorProducto acumula cantidades por producto", () => {

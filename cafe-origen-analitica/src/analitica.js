@@ -46,6 +46,19 @@ function ticketPromedio(ventas) {
 	return cantidadVentasValidas === 0 ? 0 : total / cantidadVentasValidas;
 }
 
+function ventasDelDia(ventas, fecha) {
+	const ventasValidas = ventas.filter(
+		(venta) => venta.fecha === fecha && venta.cantidad > 0
+	);
+	return {
+		fecha,
+		cantidadVentas: ventasValidas.length,
+		unidadesVendidas: unidadesVendidas(ventasValidas),
+		totalVendido: totalVendido(ventasValidas),
+		ticketPromedio: ticketPromedio(ventasValidas),
+	};
+}
+
 function ventasPorCiudad(ventas, ciudad) {
 	const ciudadBuscada = normalizarCiudad(ciudad);
 	let total = 0;
@@ -141,6 +154,7 @@ module.exports = {
 	unidadesVendidas,
 	ventaMayor,
 	ticketPromedio,
+	ventasDelDia,
 	ventasPorCiudad,
 	totalVendidoM,
 	unidadesVendidasM,
