@@ -66,15 +66,15 @@ function ventasPorCiudad() {
   const conteo = {};
 
   for (const venta of ventas) {
-    // Limpiamos espacios y pasamos a minúsculas ("Medellín" y "medellín")
+
     const ciudad = venta.ciudad.trim().toLowerCase();
 
-    // Si la ciudad no existe aún, la iniciamos en 0
+  
     if (!conteo[ciudad]) {
       conteo[ciudad] = 0;
     }
 
-    // Sumamos 1 por cada registro de venta de esa ciudad
+  
     conteo[ciudad] += 1;
   }
 
@@ -108,7 +108,7 @@ const ventasPorCiudadM = ventas.reduce((conteo, venta) => {
 console.log("Ventas por ciudad usando reduce:", ventasPorCiudadM);
 
 
-
+// Total vendido por ciudad
 const totalPorCiudad = (ventas) =>
   ventas
     .filter((venta) => venta.cantidad > 0)
@@ -122,3 +122,43 @@ const totalPorCiudad = (ventas) =>
     }, {});
 
 console.log(totalPorCiudad(ventas));
+
+
+
+// Unidades vendidas por producto
+const unidadesPorProducto = ventas.reduce((totales, venta) => {
+  totales[venta.producto] = (totales[venta.producto] || 0) + venta.cantidad;
+  return totales;
+}, {});
+
+console.log("Unidades por producto:", unidadesPorProducto);
+
+
+// Top  productos con mayor valor de venta
+const topProductosPorValor = ventas.reduce((totales, venta) => {
+  const producto = venta.producto ?? "Sin nombre";
+  const cantidad = Number(venta.cantidad) || 0;
+  const precio = Number(venta.precio) || 0;
+
+  totales[producto] = (totales[producto] || 0) + cantidad * precio;
+  return totales;
+}, {});
+
+const productosOrdenados = Object.entries(topProductosPorValor)
+  .map(([producto, valorTotal]) => ({ producto, valorTotal }))
+  .sort((a, b) => b.valorTotal - a.valorTotal);
+
+console.log("Productos con mayor valor:", productosOrdenados.slice(0, 3));
+
+
+module.exports = {
+  valorVenta,
+  totalVendido,
+  unidadesVendidas,
+  ventasMayor,
+  ticketPromedio,
+  ventasPorCiudad,
+  totalPorCiudad,
+  unidadesPorProducto,
+  productosOrdenados,
+};
