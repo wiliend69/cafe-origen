@@ -3,6 +3,7 @@ const ventas = require("./datos");
 function valorVenta(ventas) {
 	return ventas.cantidad * ventas.precio;
 }
+console.log("Valor de la venta: $",valorVenta(ventas[0]))
 
 
 function totalVendido(ventas){
@@ -45,27 +46,79 @@ function ventasMayor(ventas) {
 const mejorVenta = ventasMayor(ventas);
 console.log("La venta mayor fue:", mejorVenta);
 
-function ventasPorCiudad(ventas, ciudad) {
-  let totalCiudad = 0;
-  const ciudadBuscada = ciudad.trim().toLowerCase();
 
-  for (const Buscada of ventas) {
-    // 1. Usa 'Buscada.ciudad' (el objeto de la vuelta actual), no 'ventas'
-    const ciudadRegistro = Buscada.ciudad.trim().toLowerCase();
+function ticketPromedio(ventas) {
+  const totalVentas = totalVendido(ventas);
+  const cantidadVentas = ventas.length;
 
-    if (ciudadRegistro === ciudadBuscada) {
-      // 2. Pasa 'Buscada' a valorVenta, no toda la lista 'ventas'
-      totalCiudad += valorVenta(Buscada);
-    }
+  if (cantidadVentas === 0) {
+    return 0; 
   }
-  return totalCiudad;
+
+  return totalVentas / cantidadVentas;
 }
 
-
-console.log("Ventas de Pereira:", ventasPorCiudad(ventas, "pereira"));
-console.log("ventas de cali:", ventasPorCiudad(ventas, "cali"));
-console.log("ventas de bogota: ", ventasPorCiudad(ventas, "bogota"));
-console.log("Ventas de medellin:",ventasPorCiudad(ventas, "Medellín"));
+const promedioTicket = ticketPromedio(ventas);
+console.log("El ticket promedio es:", promedioTicket);
 
 
+function ventasPorCiudad() {
+  const conteo = {};
 
+  for (const venta of ventas) {
+    // Limpiamos espacios y pasamos a minúsculas ("Medellín" y "medellín")
+    const ciudad = venta.ciudad.trim().toLowerCase();
+
+    // Si la ciudad no existe aún, la iniciamos en 0
+    if (!conteo[ciudad]) {
+      conteo[ciudad] = 0;
+    }
+
+    // Sumamos 1 por cada registro de venta de esa ciudad
+    conteo[ciudad] += 1;
+  }
+
+
+
+  return conteo;
+}
+
+console.log(ventasPorCiudad());
+
+
+
+
+// usando metodos de arreglo
+
+//metodo reduce para calcular el total vendido
+const totalvendidoM=ventas.reduce((acumulador, venta) => acumulador + valorVenta(venta), 0);
+console.log("Total vendido usando reduce: $", totalvendidoM);
+
+// metodo reduce para calcular el total de unidades vendidas
+const unidadesVendidasM=ventas.reduce((acumulador, venta) => acumulador + venta.cantidad, 0);
+console.log("Total unidades vendidas usando reduce:", unidadesVendidasM);
+
+// metodo reduce y filter para ver las ventas por ciudad
+const ventasPorCiudadM = ventas.reduce((conteo, venta) => {
+  const ciudad = venta.ciudad.trim().toLowerCase();
+  conteo[ciudad] = (conteo[ciudad] || 0) + 1;
+  return conteo;
+}, {});
+
+console.log("Ventas por ciudad usando reduce:", ventasPorCiudadM);
+
+
+
+const totalPorCiudad = (ventas) =>
+  ventas
+    .filter((venta) => venta.cantidad > 0)
+    .map((venta) => ({
+      ciudad: venta.ciudad.trim().toLowerCase(),
+      subtotal: venta.cantidad * venta.precio,
+    }))
+    .reduce((totales, item) => {
+      totales[item.ciudad] = (totales[item.ciudad] || 0) + item.subtotal;
+      return totales;
+    }, {});
+
+console.log(totalPorCiudad(ventas));
